@@ -1,9 +1,9 @@
 streamlit
 pandas
-numpy
+numpy==1.26.4
 scipy
-xgboost
-scikit-learn
+xgboost==2.0.3
+scikit-learn==1.26.4
 matplotlib
 seaborn
-shap
+shap==0.44.1
