@@ -4,10 +4,13 @@ import pandas as pd
 import joblib
 import shap
 import matplotlib.pyplot as plt
-
-# 📌 Load models
+import xgboost as xgb  # Explicitly import xgboost
 import requests
 import os
+import warnings
+
+# Suppress XGBoost warnings about version mismatch (temporary until model is updated)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # 📌 GitHub repo (raw file links)
 GITHUB_REPO = "https://raw.githubusercontent.com/wilberkamaa/energy_demand_forecast/master/"
@@ -34,8 +37,20 @@ def load_models():
 
         # Load the model
         try:
-            models[name] = joblib.load(filename)
-            print(f"✅ Loaded {filename}")
+            if name == "xgb_model":
+                # Load XGBoost model and wrap it to ensure compatibility
+                xgb_model = joblib.load(filename)
+                # If it's an older serialized Booster, convert to current format
+                if isinstance(xgb_model, xgb.Booster):
+                    models[name] = xgb_model
+                else:
+                    # Assume it's an XGBRegressor or similar and extract Booster
+                    models[name] = xgb_model.get_booster()
+                print(f"✅ Loaded XGBoost model from {filename}")
+            else:
+                # Load Random Forest model
+                models[name] = joblib.load(filename)
+                print(f"✅ Loaded {filename}")
         except Exception as e:
             print(f"❌ Error loading {filename}: {e}")
 
@@ -43,7 +58,6 @@ def load_models():
 
 # 📌 Load the models
 rf_model, xgb_model = load_models()
-
 
 # 📌 Load data for visualization
 df = pd.read_csv("https://raw.githubusercontent.com/wilberkamaa/energy_demand_forecast/refs/heads/master/energy_data.csv")
@@ -78,13 +92,14 @@ model_choice = st.sidebar.radio("Choose Model", ["Random Forest", "XGBoost"])
 if model_choice == "Random Forest":
     prediction = rf_model.predict(input_data)[0]
 else:
-    prediction = xgb_model.predict(input_data)[0]
+    # For XGBoost, use the Booster predict method
+    dmatrix = xgb.DMatrix(input_data)
+    prediction = xgb_model.predict(dmatrix)[0]
 
 st.sidebar.subheader(f"Predicted Demand: {prediction:.2f}")
 
 # 🔹 Plot past demand vs prediction
 st.subheader("🔍 Load Demand Forecasting")
-
 fig, ax = plt.subplots(figsize=(10, 5))
 ax.plot(df.index[-100:], df["load_demand"].values[-100:], label="Actual Demand", color="blue", linestyle="dashed")
 ax.axhline(prediction, color="red", linestyle="dotted", label=f"Predicted Demand ({model_choice})")
@@ -95,9 +110,14 @@ st.pyplot(fig)
 
 # 📌 SHAP Explanation (Only for tree models)
 if st.checkbox("Show Feature Importance (SHAP)"):
-    model = rf_model if model_choice == "Random Forest" else xgb_model
-    explainer = shap.Explainer(model)
-    shap_values = explainer(input_data)
     st.subheader("📊 SHAP Feature Importance")
-    shap.summary_plot(shap_values, input_data)
-    st.pyplot()
+    if model_choice == "Random Forest":
+        explainer = shap.TreeExplainer(rf_model)
+        shap_values = explainer.shap_values(input_data)
+        shap.summary_plot(shap_values, input_data)
+    else:
+        # XGBoost SHAP with Booster
+        explainer = shap.TreeExplainer(xgb_model)
+        shap_values = explainer.shap_values(input_data)
+        shap.summary_plot(shap_values, input_data)
+    st.pyplot(plt.gcf())  # Use gcf() to get the current figure
