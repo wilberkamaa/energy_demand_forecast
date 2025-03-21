@@ -1,11 +1,11 @@
-python-3.10
-
 streamlit
 pandas
-numpy==1.26.4
+numpy
 scipy
-xgboost==2.0.3
-scikit-learn==1.26.4
+xgboost
+scikit-learn
 matplotlib
 seaborn
-shap==0.44.1
+shap
+numba
+llvmlite
