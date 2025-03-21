@@ -1,11 +1,11 @@
+python-3.10
+
 streamlit
 pandas
 numpy==1.26.4
 scipy
 xgboost==2.0.3
-scikit-learn==1.6.1
+scikit-learn==1.26.4
 matplotlib
 seaborn
-shap==0.47.0
-numba==0.56.4  # Needed for SHAP
-llvmlite==0.39.1  # Needed for SHAP
+shap==0.44.1
