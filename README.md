@@ -1,25 +1,39 @@
-# 📦 Streamlit App Starter Kit 
-```
-⬆️ (Replace above with your app's name)
-```
+## Energy Load Demand Forecasting Dashboard
 
-Description of the app ...
+### Overview
 
-## Demo App
+This project predicts energy load demand using XGBoost and visualizes the results in a Streamlit dashboard. The model is trained on historical energy consumption data, incorporating factors like time, weather variations, and past demand trends.
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://app-starter-kit.streamlit.app/)
+**Features**
 
-## GitHub Codespaces
+- Machine Learning Model: Uses XGBoost for demand forecasting.
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/streamlit/app-starter-kit?quickstart=1)
+- Data Visualization: Displays load predictions using Streamlit.
 
-## Section Heading
+- Synthetic Data Support: Simulates demand scenarios when real-world data is unavailable.
 
-This is filler text, please replace this with text for this section.
+- User Interaction: Allows dynamic input adjustments.
 
-## Further Reading
 
-This is filler text, please replace this with a explanatory text about further relevant resources for this repo
-- Resource 1
-- Resource 2
-- Resource 3
+The model expects a CSV file with the following columns:
+
+- timestamp – Date and time of energy measurement
+
+- load_demand – Energy consumption value
+
+- temperature – Ambient temperature (if available)
+
+- weather_conditions – Categorical/weather impact data
+
+### Model Training
+
+The model is trained using historical energy demand data. It learns patterns and predicts future demand based on input features. If new data is available, the model can be retrained dynamically.
+
+**Future Enhancements**
+
+- Improve model accuracy with additional external factors.
+
+- Deploy the model using a cloud-based API.
+
+- Add real-time data streaming for live forecasting.
+
