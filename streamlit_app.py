@@ -7,16 +7,12 @@ import matplotlib.pyplot as plt
 import xgboost as xgb  # Explicitly import xgboost
 import requests
 import os
-import warnings
-
-# Suppress XGBoost warnings about version mismatch (temporary until model is updated)
-warnings.filterwarnings("ignore", category=UserWarning)
 
 # 📌 GitHub repo (raw file links)
 GITHUB_REPO = "https://raw.githubusercontent.com/wilberkamaa/energy_demand_forecast/master/"
 MODEL_FILES = {
     "rf_model": "random_forest_model.pkl",
-    "xgb_model": "xgboost_model.pkl"
+    "xgb_model": "xgboost_model.json"  # Updated to .json
 }
 
 @st.cache_resource
@@ -38,17 +34,13 @@ def load_models():
         # Load the model
         try:
             if name == "xgb_model":
-                # Load XGBoost model and wrap it to ensure compatibility
-                xgb_model = joblib.load(filename)
-                # If it's an older serialized Booster, convert to current format
-                if isinstance(xgb_model, xgb.Booster):
-                    models[name] = xgb_model
-                else:
-                    # Assume it's an XGBRegressor or similar and extract Booster
-                    models[name] = xgb_model.get_booster()
+                # Load XGBoost model from JSON using Booster
+                xgb_model = xgb.Booster()
+                xgb_model.load_model(filename)  # Load JSON format
+                models[name] = xgb_model
                 print(f"✅ Loaded XGBoost model from {filename}")
             else:
-                # Load Random Forest model
+                # Load Random Forest model with joblib
                 models[name] = joblib.load(filename)
                 print(f"✅ Loaded {filename}")
         except Exception as e:
@@ -92,7 +84,7 @@ model_choice = st.sidebar.radio("Choose Model", ["Random Forest", "XGBoost"])
 if model_choice == "Random Forest":
     prediction = rf_model.predict(input_data)[0]
 else:
-    # For XGBoost, use the Booster predict method
+    # For XGBoost Booster, use DMatrix
     dmatrix = xgb.DMatrix(input_data)
     prediction = xgb_model.predict(dmatrix)[0]
 
