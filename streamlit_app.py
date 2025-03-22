@@ -80,36 +80,50 @@ input_data["hour_demand"] = input_data["hour"] * input_data["demand_prev_day"]
 # 🔹 Select model
 model_choice = st.sidebar.radio("Choose Model", ["Random Forest", "XGBoost"])
 
-# 📌 Make prediction
-if model_choice == "Random Forest":
-    prediction = rf_model.predict(input_data)[0]
-else:
-    # For XGBoost Booster, use DMatrix
-    dmatrix = xgb.DMatrix(input_data.astype(float))
-    prediction = float(xgb_model.predict(dmatrix)[0])
+# 🔹 Generate next 24-hour forecast
+st.subheader("🔍 Next 24-Hour Demand Forecast")
 
-st.sidebar.subheader(f"Predicted Demand: {prediction:.2f}")
+future_inputs = input_data.copy()  # Start with the user's inputs
+future_predictions = []  # Store predictions
+future_hours = list(range(hour, hour + 24))  # Next 24 hours
 
-# 🔹 Plot past demand vs prediction
-st.subheader("🔍 Load Demand Forecasting")
+for h in future_hours:
+    # Predict based on the selected model
+    if model_choice == "Random Forest":
+        pred = rf_model.predict(future_inputs)[0]
+    else:
+        pred = xgb_model.predict(xgb.DMatrix(future_inputs))[0]
+    
+    future_predictions.append(pred)
+    
+    # Update features dynamically (simulating a rolling forecast)
+    future_inputs["hour"] = h % 24  # Ensure hours wrap around (0-23)
+    future_inputs["demand_prev_hour"] = pred  # Use last prediction as new prev_hour demand
+    future_inputs["demand_prev_day"] = future_inputs["demand_prev_hour"]  # Approximate (can improve)
+    future_inputs["demand_rolling_24h"] = np.mean(future_predictions[-24:])  # Approximate rolling avg
+    future_inputs["hour_demand"] = future_inputs["hour"] * future_inputs["demand_prev_day"]
+
+# 🔹 Plot actual vs predicted demand
 fig, ax = plt.subplots(figsize=(10, 5))
+
 ax.plot(df.index[-100:], df["load_demand"].values[-100:], label="Actual Demand", color="blue", linestyle="dashed")
-ax.axhline(prediction, color="red", linestyle="dotted", label=f"Predicted Demand ({model_choice})")
+ax.plot(future_hours, future_predictions, label="Predicted Demand", color="red", linestyle="solid")
+
 ax.legend()
-ax.set_xlabel("Time")
+ax.set_xlabel("Time (Hours)")
 ax.set_ylabel("Load Demand")
 st.pyplot(fig)
 
-# Print SHAP
+# 📌 SHAP Explanation (Only for tree models)
 if st.checkbox("Show Feature Importance (SHAP)"):
     st.subheader("📊 SHAP Feature Importance")
-    
-    explainer = shap.TreeExplainer(rf_model if model_choice == "Random Forest" else xgb_model)
-    
     if model_choice == "Random Forest":
-        shap_values = explainer.shap_values(input_data)[1]  # Select class 1 for regression
+        explainer = shap.TreeExplainer(rf_model)
+        shap_values = explainer.shap_values(input_data)
+        shap.summary_plot(shap_values, input_data)
     else:
-        shap_values = explainer(input_data)  # Use correct SHAP function for XGBoost
-
-    shap.summary_plot(shap_values, input_data)
-    st.pyplot(plt.gcf())  # Get the current figure
+        # XGBoost SHAP with Booster
+        explainer = shap.TreeExplainer(xgb_model)
+        shap_values = explainer.shap_values(input_data)
+        shap.summary_plot(shap_values, input_data)
+    st.pyplot(plt.gcf())  # Use gcf() to get the current figure
