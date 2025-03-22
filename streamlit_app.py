@@ -8,7 +8,7 @@ import xgboost as xgb  # Explicitly import xgboost
 import requests
 import os
 
-# 📌 GitHub repo (raw file links)
+# GitHub repo (raw file links)
 GITHUB_REPO = "https://raw.githubusercontent.com/wilberkamaa/energy_demand_forecast/master/"
 MODEL_FILES = {
     "rf_model": "random_forest_model.pkl",
