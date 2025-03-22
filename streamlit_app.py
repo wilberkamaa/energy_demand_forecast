@@ -85,8 +85,8 @@ if model_choice == "Random Forest":
     prediction = rf_model.predict(input_data)[0]
 else:
     # For XGBoost Booster, use DMatrix
-    dmatrix = xgb.DMatrix(input_data)
-    prediction = xgb_model.predict(dmatrix)[0]
+    dmatrix = xgb.DMatrix(input_data.astype(float))
+    prediction = float(xgb_model.predict(dmatrix)[0])
 
 st.sidebar.subheader(f"Predicted Demand: {prediction:.2f}")
 
@@ -100,16 +100,16 @@ ax.set_xlabel("Time")
 ax.set_ylabel("Load Demand")
 st.pyplot(fig)
 
-# 📌 SHAP Explanation (Only for tree models)
+# Print SHAP
 if st.checkbox("Show Feature Importance (SHAP)"):
     st.subheader("📊 SHAP Feature Importance")
+    
+    explainer = shap.TreeExplainer(rf_model if model_choice == "Random Forest" else xgb_model)
+    
     if model_choice == "Random Forest":
-        explainer = shap.TreeExplainer(rf_model)
-        shap_values = explainer.shap_values(input_data)
-        shap.summary_plot(shap_values, input_data)
+        shap_values = explainer.shap_values(input_data)[1]  # Select class 1 for regression
     else:
-        # XGBoost SHAP with Booster
-        explainer = shap.TreeExplainer(xgb_model)
-        shap_values = explainer.shap_values(input_data)
-        shap.summary_plot(shap_values, input_data)
-    st.pyplot(plt.gcf())  # Use gcf() to get the current figure
+        shap_values = explainer(input_data)  # Use correct SHAP function for XGBoost
+
+    shap.summary_plot(shap_values, input_data)
+    st.pyplot(plt.gcf())  # Get the current figure
