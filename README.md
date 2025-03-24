@@ -2,7 +2,7 @@
 
 ### Overview
 
-This project predicts energy load demand using XGBoost and visualizes the results in a Streamlit dashboard. The model is trained on historical energy consumption data, incorporating factors like time, weather variations, and past demand trends.
+This project predicts energy load demand using XGBoost  & RF models and visualizes the results in a Streamlit dashboard. The model is trained on historical energy consumption data, incorporating factors like time, weather variations, and past demand trends.
 
 **Features**
 
